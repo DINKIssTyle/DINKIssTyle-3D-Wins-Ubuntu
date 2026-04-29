@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.dkst-3d-wins" path="/org/gnome/shell/extensions/dkst-3d-wins/">
+    <key name="max-layers" type="i">
+      <default>5</default>
+      <range min="2" max="12"/>
+      <summary>Maximum depth layers</summary>
+      <description>Number of focus-history layers. The focused window is layer one and all remaining old windows share the last layer.</description>
+    </key>
+    <key name="layer-distance" type="i">
+      <default>70</default>
+      <range min="20" max="220"/>
+      <summary>Distance between layers</summary>
+      <description>Visual distance in pixels used to separate older windows from the focused window.</description>
+    </key>
+    <key name="magnetic-push" type="i">
+      <default>80</default>
+      <range min="0" max="220"/>
+      <summary>Magnetic push</summary>
+      <description>Extra visual push applied to background windows that overlap the focused window.</description>
+    </key>
+    <key name="use-magnetic-push" type="b">
+      <default>true</default>
+      <summary>Use magnetic push</summary>
+      <description>Whether to push overlapping background windows away from the focused window.</description>
+    </key>
+    <key name="adjust-surrounding-windows-on-focused-move" type="b">
+      <default>false</default>
+      <summary>Adjust surrounding windows while moving focused window</summary>
+      <description>Whether to update nearby background window positions while the focused window is being moved.</description>
+    </key>
+    <key name="use-cylinder-switcher" type="b">
+      <default>true</default>
+      <summary>Use cylindrical Alt-Tab switcher</summary>
+      <description>Whether Alt-Tab and Super-Tab replace the default popup with a one-row 3D cylinder window switcher.</description>
+    </key>
+    <key name="transparency" type="i">
+      <default>0</default>
+      <range min="0" max="100"/>
+      <summary>Transparency intensity</summary>
+      <description>Transparency applied by depth. Zero keeps every layer fully opaque, while higher values make deeper layers more transparent.</description>
+    </key>
+    <key name="rotation-x" type="i">
+      <default>7</default>
+      <range min="0" max="45"/>
+      <summary>X rotation</summary>
+      <description>Maximum X-axis rotation in degrees applied to the deepest layer.</description>
+    </key>
+    <key name="rotation-y" type="i">
+      <default>9</default>
+      <range min="0" max="45"/>
+      <summary>Y rotation</summary>
+      <description>Maximum Y-axis rotation in degrees applied to the deepest layer.</description>
+    </key>
+  </schema>
+</schemalist>

@@ -1,0 +1,15 @@
+{
+  "uuid": "dkst-3d-wins@dinkisstyle.com",
+  "name": "DINKIssTyle 3D Wins",
+  "description": "Adds layered 3D depth to GNOME Shell windows based on focus history.",
+  "shell-version": [
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
+    "50"
+  ],
+  "settings-schema": "org.gnome.shell.extensions.dkst-3d-wins",
+  "url": "https://github.com/dinkisstyle/DINKIssTyle-3D-Wins-Ubuntu"
+}
