@@ -16,8 +16,8 @@ GNOME Shell extension that gives open windows a focus-history based 3D layer eff
 - **Adjust surrounding windows while moving focused window**: defaults to off.
 - **Use cylindrical Alt-Tab switcher**: defaults to on. Alt-Tab replaces the default system popup with a one-row 3D cylinder window switcher; each press moves one slot, Shift+Alt+Tab moves the opposite way, and releasing Alt activates the centered window.
 - **Transparency**: defaults to `0`, which keeps all layers fully opaque. Higher values make deeper layers more transparent.
-- **X rotation**: defaults to `7` degrees for the deepest layer.
-- **Y rotation**: defaults to `9` degrees for the deepest layer.
+- **X rotation**: defaults to `7` degrees. Background windows tilt vertically based on their position around the focused window.
+- **Y rotation**: defaults to `9` degrees. Background windows tilt horizontally based on their position around the focused window.
 
 For example, if maximum layers is `3`, layer 1 is the current focused window, layer 2 is the previously focused window, and layer 3 contains all remaining windows.
 

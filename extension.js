@@ -464,7 +464,10 @@ export default class Dkst3DWinsExtension extends Extension {
             }
 
             this._styleLayer(actor, layer, maxLayers, options,
-                window === activeWindow, this._getMagneticPush(window, activeRect, magneticPush));
+                window === activeWindow,
+                this._getMagneticPush(window, activeRect, magneticPush),
+                window,
+                activeRect);
         }
 
         for (const actor of resetActors) {
@@ -504,7 +507,7 @@ export default class Dkst3DWinsExtension extends Extension {
         }
     }
 
-    _styleLayer(actor, layer, maxLayers, options, isFocused, magneticOffset) {
+    _styleLayer(actor, layer, maxLayers, options, isFocused, magneticOffset, window, activeRect) {
         actor.remove_all_transitions();
         actor.set_pivot_point(0.5, 0.5);
 
@@ -531,8 +534,8 @@ export default class Dkst3DWinsExtension extends Extension {
         const translationX = sideOffset + magneticOffset.x;
         const translationY = verticalOffset + magneticOffset.y;
         const depthRatio = layer / Math.max(1, maxLayers - 1);
-        const rotationX = -options.rotationXMax * depthRatio;
-        const rotationY = options.rotationYMax * depthRatio;
+        const sphericalRotation = this._getSphericalLayerRotation(
+            window, activeRect, translationX, translationY, depthRatio, options);
         const opacity = Math.round(255 * (1 - options.transparency / 100 * depthRatio));
 
         actor.ease({
@@ -541,12 +544,42 @@ export default class Dkst3DWinsExtension extends Extension {
             translation_x: translationX,
             translation_y: translationY,
             translation_z: 0,
-            rotation_angle_x: rotationX,
-            rotation_angle_y: rotationY,
+            rotation_angle_x: sphericalRotation.x,
+            rotation_angle_y: sphericalRotation.y,
             opacity,
             duration: ANIMATION_TIME,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
         });
+    }
+
+    _getSphericalLayerRotation(window, activeRect, translationX, translationY, depthRatio, options) {
+        if (!window || !activeRect) {
+            return {
+                x: -options.rotationXMax * depthRatio,
+                y: options.rotationYMax * depthRatio,
+            };
+        }
+
+        const rect = window.get_frame_rect();
+        const monitor = this._getCurrentMonitorGeometry();
+        const activeCenterX = activeRect.x + activeRect.width / 2;
+        const activeCenterY = activeRect.y + activeRect.height / 2;
+        const windowCenterX = rect.x + rect.width / 2 + translationX;
+        const windowCenterY = rect.y + rect.height / 2 + translationY;
+        const normalizeX = Math.max(activeRect.width * 0.7, monitor.width * 0.34, 1);
+        const normalizeY = Math.max(activeRect.height * 0.7, monitor.height * 0.34, 1);
+        const offsetX = this._clamp((windowCenterX - activeCenterX) / normalizeX, -1, 1);
+        const offsetY = this._clamp((windowCenterY - activeCenterY) / normalizeY, -1, 1);
+        const strength = 0.35 + depthRatio * 0.85;
+
+        return {
+            x: offsetY * options.rotationXMax * strength,
+            y: -offsetX * options.rotationYMax * strength,
+        };
+    }
+
+    _clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     _styleCylinderSwitcherWindow(actor, window, options) {

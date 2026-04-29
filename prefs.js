@@ -56,12 +56,12 @@ export default class Dkst3DWinsPreferences extends ExtensionPreferences {
 
         const rotationX = Adw.SpinRow.new_with_range(0, 45, 1);
         rotationX.title = 'X rotation';
-        rotationX.subtitle = 'Maximum tilt in degrees for the deepest layer. Default is 7.';
+        rotationX.subtitle = 'Maximum spherical vertical tilt around the focused window. Default is 7.';
         this._bindIntSpin(settings, 'rotation-x', rotationX);
 
         const rotationY = Adw.SpinRow.new_with_range(0, 45, 1);
         rotationY.title = 'Y rotation';
-        rotationY.subtitle = 'Maximum side rotation in degrees for the deepest layer. Default is 9.';
+        rotationY.subtitle = 'Maximum spherical side rotation around the focused window. Default is 9.';
         this._bindIntSpin(settings, 'rotation-y', rotationY);
 
         group.add(maxLayers);
