@@ -411,6 +411,7 @@ export default class Dkst3DWinsExtension extends Extension {
         const maxLayers = this._settings.get_int('max-layers');
         const layerDistance = this._settings.get_int('layer-distance');
         const perspectiveStrength = this._settings.get_int('perspective-strength');
+        const layerShrink = this._settings.get_int('layer-shrink');
         const transparency = this._settings.get_int('transparency');
         const rotationXMax = this._settings.get_int('rotation-x');
         const rotationYMax = this._settings.get_int('rotation-y');
@@ -459,6 +460,7 @@ export default class Dkst3DWinsExtension extends Extension {
             const options = {
                 layerDistance,
                 perspectiveStrength,
+                layerShrink,
                 transparency,
                 rotationXMax,
                 rotationYMax,
@@ -534,10 +536,9 @@ export default class Dkst3DWinsExtension extends Extension {
             return;
         }
 
-        const perspectiveRatio = options.perspectiveStrength / 100;
-        const scaleStep = Math.min(MAX_SCALE_PER_LAYER, MIN_SCALE_PER_LAYER + options.layerDistance / 2400) *
-            perspectiveRatio;
-        const scale = Math.max(0.58, 1 - layer * scaleStep);
+        const scaleStep = (Math.min(MAX_SCALE_PER_LAYER, MIN_SCALE_PER_LAYER + options.layerDistance / 2400) *
+            options.layerShrink / 100) * 0.5;
+        const scale = Math.max(0.48, 1 - layer * scaleStep);
         const sideOffset = layer * Math.max(10, Math.round(options.layerDistance * 0.22));
         const verticalOffset = layer * Math.max(18, Math.round(options.layerDistance * 0.42));
         const translationX = sideOffset + magneticOffset.x;
@@ -552,7 +553,7 @@ export default class Dkst3DWinsExtension extends Extension {
             scale_y: scale,
             translation_x: translationX,
             translation_y: translationY,
-            translation_z: 0,
+            translation_z: -layer * (options.layerDistance * 1.5),
             rotation_angle_x: sphericalRotation.x,
             rotation_angle_y: sphericalRotation.y,
             opacity,
@@ -614,7 +615,7 @@ export default class Dkst3DWinsExtension extends Extension {
         const maxWidth = monitor.width * 0.46;
         const maxHeight = monitor.height * 0.56;
         const baseScale = Math.min(0.92, maxWidth / Math.max(1, rect.width), maxHeight / Math.max(1, rect.height));
-        const cylinderScaleDrop = 1 - (1 - Math.pow(0.86, absOffset)) * options.perspectiveStrength / 100;
+        const cylinderScaleDrop = 1 - (1 - Math.pow(0.86, absOffset)) * options.layerShrink / 100;
         const scale = Math.max(0.34, baseScale * cylinderScaleDrop);
         const targetCenterX = centerX + displayOffset * monitor.width * CYLINDER_SWITCHER_SIDE_STEP_RATIO;
         const targetCenterY = centerY + absOffset * monitor.height * 0.035;

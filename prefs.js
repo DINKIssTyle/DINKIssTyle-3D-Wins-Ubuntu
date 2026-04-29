@@ -33,8 +33,13 @@ export default class Dkst3DWinsPreferences extends ExtensionPreferences {
 
         const perspectiveStrength = Adw.SpinRow.new_with_range(0, 140, 5);
         perspectiveStrength.title = 'Perspective strength';
-        perspectiveStrength.subtitle = 'Default is 100. Lower values reduce layer shrinking and perspective tilt.';
+        perspectiveStrength.subtitle = 'Default is 70. Lower values reduce vanishing-point tilt.';
         this._bindIntSpin(settings, 'perspective-strength', perspectiveStrength);
+
+        const layerShrink = Adw.SpinRow.new_with_range(60, 180, 5);
+        layerShrink.title = 'Layer shrink';
+        layerShrink.subtitle = 'Default is 120. Higher values make background windows smaller.';
+        this._bindIntSpin(settings, 'layer-shrink', layerShrink);
 
         const magneticPush = Adw.SpinRow.new_with_range(0, 220, 5);
         magneticPush.title = 'Magnetic push';
@@ -77,6 +82,7 @@ export default class Dkst3DWinsPreferences extends ExtensionPreferences {
         group.add(maxLayers);
         group.add(layerDistance);
         group.add(perspectiveStrength);
+        group.add(layerShrink);
         group.add(useMagneticPush);
         group.add(magneticPush);
         group.add(adjustOnFocusedMove);
