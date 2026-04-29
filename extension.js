@@ -9,13 +9,13 @@ import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 
-import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 const ANIMATION_TIME = 220;
 const MIN_SCALE_PER_LAYER = 0.045;
 const MAX_SCALE_PER_LAYER = 0.085;
-const MAGNETIC_OVERLAP_RATIO = 0.42;
+const MAGNETIC_OVERLAP_RATIO = 0.10;
 const CYLINDER_SWITCHER_VISIBLE_SIDE_WINDOWS = 2;
 const CYLINDER_SWITCHER_SIDE_STEP_RATIO = 0.2;
 const CYLINDER_SWITCHER_DEPTH_RATIO = 0.35;
@@ -657,7 +657,7 @@ export default class Dkst3DWinsExtension extends Extension {
 
     _getMagneticPush(window, activeRect, magneticPush) {
         if (!activeRect || !window || magneticPush <= 0 || window === global.display.focus_window)
-            return {x: 0, y: 0};
+            return { x: 0, y: 0 };
 
         const rect = window.get_frame_rect();
         const overlapWidth = Math.min(activeRect.x + activeRect.width, rect.x + rect.width) -
@@ -666,7 +666,7 @@ export default class Dkst3DWinsExtension extends Extension {
             Math.max(activeRect.y, rect.y);
 
         if (overlapWidth <= 0 || overlapHeight <= 0)
-            return {x: 0, y: 0};
+            return { x: 0, y: 0 };
 
         const activeCenterX = activeRect.x + activeRect.width / 2;
         const activeCenterY = activeRect.y + activeRect.height / 2;
@@ -688,12 +688,12 @@ export default class Dkst3DWinsExtension extends Extension {
         if (Math.abs(directionX) >= Math.abs(directionY)) {
             const sign = directionX >= 0 ? 1 : -1;
             const partialPush = overlapWidth * (1 - MAGNETIC_OVERLAP_RATIO);
-            return {x: sign * Math.min(strength, partialPush), y: 0};
+            return { x: sign * Math.min(strength, partialPush), y: 0 };
         }
 
         const sign = directionY >= 0 ? 1 : -1;
         const partialPush = overlapHeight * (1 - MAGNETIC_OVERLAP_RATIO);
-        return {x: 0, y: sign * Math.min(strength, partialPush)};
+        return { x: 0, y: sign * Math.min(strength, partialPush) };
     }
 
     _restackActors(actors, maxLayers, aboveLayerActors = []) {

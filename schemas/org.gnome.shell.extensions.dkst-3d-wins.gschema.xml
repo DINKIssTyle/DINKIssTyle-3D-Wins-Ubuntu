@@ -37,7 +37,7 @@
       <description>Whether to push overlapping background windows away from the focused window.</description>
     </key>
     <key name="adjust-surrounding-windows-on-focused-move" type="b">
-      <default>false</default>
+      <default>true</default>
       <summary>Adjust surrounding windows while moving focused window</summary>
       <description>Whether to update nearby background window positions while the focused window is being moved.</description>
     </key>
@@ -53,13 +53,13 @@
       <description>Transparency applied by depth. Zero keeps every layer fully opaque, while higher values make deeper layers more transparent.</description>
     </key>
     <key name="rotation-x" type="i">
-      <default>7</default>
+      <default>45</default>
       <range min="0" max="45"/>
       <summary>X rotation</summary>
       <description>Maximum X-axis spherical rotation in degrees around the focused window.</description>
     </key>
     <key name="rotation-y" type="i">
-      <default>9</default>
+      <default>45</default>
       <range min="0" max="45"/>
       <summary>Y rotation</summary>
       <description>Maximum Y-axis spherical rotation in degrees around the focused window.</description>
