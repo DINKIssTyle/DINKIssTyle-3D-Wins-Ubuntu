@@ -1,3 +1,8 @@
+/*
+ * Created by DINKIssTyle on 2026.
+ * Copyright (C) 2026 DINKI'ssTyle. All rights reserved.
+ */
+
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';

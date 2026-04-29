@@ -1,48 +1,122 @@
-# DINKIssTyle 3D Wins
+# 🌟 DINKIssTyle 3D Wins
 
-GNOME Shell extension that gives open windows a focus-history based 3D layer effect.
+[🇰🇷 한국어 버전으로 이동 (Jump to Korean Version)](#-dinkisstyle-3d-wins-korean)
 
-- The focused window stays at 100% size.
-- Previously focused windows move to deeper visual layers.
-- The oldest windows share the final layer.
-- The desktop wallpaper is not changed.
+[![GNOME Shell](https://img.shields.io/badge/GNOME-Shell-blue?logo=gnome)](https://extensions.gnome.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-## Options
+**DINKIssTyle 3D Wins** is a GNOME Shell extension that adds a **3D layer effect** to windows based on focus history. It arranges background windows in 3D layers around the focused window, providing visual depth and an immersive workflow experience.
 
-- **Maximum layers**: defaults to `5`.
-- **Distance between layers**: defaults to `70`.
-- **Use magnetic push**: defaults to on.
-- **Magnetic push**: defaults to `80`, which controls how far overlapping background windows are pushed away from the focused window while keeping some overlap.
-- **Adjust surrounding windows while moving focused window**: defaults to off.
-- **Use cylindrical Alt-Tab switcher**: defaults to on. Alt-Tab replaces the default system popup with a one-row 3D cylinder window switcher; each press moves one slot, Shift+Alt+Tab moves the opposite way, and releasing Alt activates the centered window.
-- **Transparency**: defaults to `0`, which keeps all layers fully opaque. Higher values make deeper layers more transparent.
-- **X rotation**: defaults to `7` degrees. Background windows tilt vertically based on their position around the focused window.
-- **Y rotation**: defaults to `9` degrees. Background windows tilt horizontally based on their position around the focused window.
+---
 
-For example, if maximum layers is `3`, layer 1 is the current focused window, layer 2 is the previously focused window, and layer 3 contains all remaining windows.
+## ✨ Key Features
 
-## Install Locally
+- 🎯 **Focus-based Layering**: The currently focused window stays in the foreground, while previously used windows move to deeper visual layers sequentially.
+- 🧲 **Magnetic Push**: Automatically pushes overlapping background windows away from the focused window to ensure visibility.
+- 🔄 **Cylindrical Alt-Tab Switcher**: Replaces the default flat popup with a 3D cylindrical style window switcher.
+- 🎨 **Customizable**: Fine-tune maximum layers, distance, rotation angles, transparency, and more.
 
-Interactive installer:
+## ⚙️ Options
 
-```sh
+- **Maximum layers**: Number of visual depth levels (Default: `5`)
+- **Distance between layers**: 3D spacing between windows (Default: `70`)
+- **Use magnetic push**: Enable/disable pushing background windows (Default: `On`)
+- **Magnetic push strength**: Control how far overlapping background windows are pushed (Default: `80`)
+- **Adjust surrounding windows while moving focused window**: Real-time background adjustment while dragging (Default: `Off`)
+- **Cylindrical Alt-Tab switcher**: Use 3D cylinder style switcher (Default: `On`)
+- **Transparency**: Adjust opacity for deeper layers (Default: `0`)
+- **X/Y rotation**: Tilting angles for background windows based on their position.
+
+## 🚀 Installation
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/DINKIssTyle/DINKIssTyle-3D-Wins-Ubuntu.git
+cd DINKIssTyle-3D-Wins-Ubuntu
+```
+
+### 2. Local Install
+
+**Using Interactive Installer:**
+```bash
 ./install.sh
 ```
 
-Manual install:
-
-```sh
+**Manual Install:**
+```bash
 make install
 ```
 
-Then restart GNOME Shell or log out and back in, and enable:
-
-```sh
+### 3. Enable Extension
+Restart GNOME Shell or log out and back in, then enable via:
+```bash
 gnome-extensions enable dkst-3d-wins@dinkisstyle.com
 ```
 
-Open preferences with:
-
-```sh
+## 🛠️ Preferences
+Open settings with:
+```bash
 gnome-extensions prefs dkst-3d-wins@dinkisstyle.com
 ```
+
+---
+
+## 🌟 DINKIssTyle 3D Wins (Korean)
+
+**DINKIssTyle 3D Wins**는 GNOME Shell 창에 포커스 기록 기반의 **3D 레이어 효과**를 부여하는 확장 기능입니다.  
+활성 창을 중심으로 배경 창들을 입체적으로 배치하여 시각적인 깊이감과 작업 흐름의 몰입감을 더해줍니다.
+
+---
+
+### ✨ 주요 기능
+
+- 🎯 **포커스 기반 레이어링**: 현재 포커스된 창은 전면에 위치하고, 이전에 사용했던 창들은 순차적으로 깊은 시각적 레이어로 이동합니다.
+- 🧲 **마그네틱 푸시 (Magnetic Push)**: 배경 창들이 활성 창과 겹치지 않도록 지능적으로 밀어내어 가독성을 확보합니다.
+- 🔄 **원통형 Alt-Tab 전환기**: 기존의 평면적인 팝업 대신 3D 원통형 스타일의 창 전환기를 제공합니다.
+- 🎨 **커스터마이징**: 레이어 수, 거리, 회전 각도, 투명도 등을 사용자 취향에 맞게 세밀하게 조정할 수 있습니다.
+
+### ⚙️ 설정 옵션
+
+- **최대 레이어 수 (Maximum layers)**: 시각적으로 표시할 최대 단계 수 (기본값: `5`)
+- **레이어 간 거리 (Distance between layers)**: 창들 사이의 입체적인 간격 (기본값: `70`)
+- **마그네틱 푸시 사용**: 활성 창 주변의 창들을 밀어낼지 여부 (기본값: `On`)
+- **마그네틱 푸시 강도**: 겹치는 배경 창을 활성 창으로부터 얼마나 멀리 밀어낼지 제어 (기본값: `80`)
+- **포커스 창 이동 시 주변 창 실시간 조정**: 활성 창을 드래그할 때 배경 창들이 실시간으로 반응 (기본값: `Off`)
+- **원통형 Alt-Tab 전환기**: 3D 실린더 스타일의 창 전환기 사용 여부 (기본값: `On`)
+- **투명도 (Transparency)**: 깊은 레이어에 위치한 창들의 투명도 조절 (기본값: `0`)
+- **X/Y 축 회전**: 배경 창들의 상하/좌우 기울기 각도 조절
+
+### 🚀 설치 방법
+
+#### 1. 저장소 복제 (Git Clone)
+```bash
+git clone https://github.com/DINKIssTyle/DINKIssTyle-3D-Wins-Ubuntu.git
+cd DINKIssTyle-3D-Wins-Ubuntu
+```
+
+#### 2. 로컬 설치
+**대화형 설치 스크립트 사용:**
+```bash
+./install.sh
+```
+
+**수동 설치:**
+```bash
+make install
+```
+
+#### 3. 확장 기능 활성화
+설치 후 GNOME Shell을 재시작하거나 로그아웃 후 다시 로그인한 뒤, 아래 명령어로 활성화하세요.
+```bash
+gnome-extensions enable dkst-3d-wins@dinkisstyle.com
+```
+
+### 🛠️ 설정 열기
+아래 명령어를 통해 상세 설정을 변경할 수 있습니다.
+```bash
+gnome-extensions prefs dkst-3d-wins@dinkisstyle.com
+```
+
+---
+
+*Created by DINKIssTyle. Copyright (C) 2026 DINKI'ssTyle. All rights reserved.*

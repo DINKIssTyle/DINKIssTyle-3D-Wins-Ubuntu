@@ -1,3 +1,6 @@
+# Created by DINKIssTyle on 2026.
+# Copyright (C) 2026 DINKI'ssTyle. All rights reserved.
+
 UUID = dkst-3d-wins@dinkisstyle.com
 INSTALL_DIR = $(HOME)/.local/share/gnome-shell/extensions/$(UUID)
 
