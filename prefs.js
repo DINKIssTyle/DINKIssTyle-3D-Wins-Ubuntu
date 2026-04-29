@@ -31,6 +31,11 @@ export default class Dkst3DWinsPreferences extends ExtensionPreferences {
         layerDistance.subtitle = 'Higher values create stronger depth and separation.';
         this._bindIntSpin(settings, 'layer-distance', layerDistance);
 
+        const perspectiveStrength = Adw.SpinRow.new_with_range(0, 140, 5);
+        perspectiveStrength.title = 'Perspective strength';
+        perspectiveStrength.subtitle = 'Default is 100. Lower values reduce layer shrinking and perspective tilt.';
+        this._bindIntSpin(settings, 'perspective-strength', perspectiveStrength);
+
         const magneticPush = Adw.SpinRow.new_with_range(0, 220, 5);
         magneticPush.title = 'Magnetic push';
         magneticPush.subtitle = 'Pushes overlapping background windows away from the focused window while keeping some overlap.';
@@ -71,6 +76,7 @@ export default class Dkst3DWinsPreferences extends ExtensionPreferences {
 
         group.add(maxLayers);
         group.add(layerDistance);
+        group.add(perspectiveStrength);
         group.add(useMagneticPush);
         group.add(magneticPush);
         group.add(adjustOnFocusedMove);

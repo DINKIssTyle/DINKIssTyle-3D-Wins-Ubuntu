@@ -20,6 +20,7 @@
 
 - **Maximum layers**: Number of visual depth levels (Default: `5`)
 - **Distance between layers**: 3D spacing between windows (Default: `70`)
+- **Perspective strength**: Control how much deeper layers shrink and tilt (Default: `100`)
 - **Use magnetic push**: Enable/disable pushing background windows (Default: `On`)
 - **Magnetic push strength**: Control how far overlapping background windows are pushed (Default: `80`)
 - **Adjust surrounding windows while moving focused window**: Real-time background adjustment while dragging (Default: `Off`)
@@ -79,6 +80,7 @@ gnome-extensions prefs dkst-3d-wins@dinkisstyle.com
 
 - **최대 레이어 수 (Maximum layers)**: 시각적으로 표시할 최대 단계 수 (기본값: `5`)
 - **레이어 간 거리 (Distance between layers)**: 창들 사이의 입체적인 간격 (기본값: `70`)
+- **원근감 강도 (Perspective strength)**: 깊은 레이어의 창 축소와 기울기 강도 조절 (기본값: `100`)
 - **마그네틱 푸시 사용**: 활성 창 주변의 창들을 밀어낼지 여부 (기본값: `On`)
 - **마그네틱 푸시 강도**: 겹치는 배경 창을 활성 창으로부터 얼마나 멀리 밀어낼지 제어 (기본값: `80`)
 - **포커스 창 이동 시 주변 창 실시간 조정**: 활성 창을 드래그할 때 배경 창들이 실시간으로 반응 (기본값: `Off`)

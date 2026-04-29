@@ -13,6 +13,12 @@
       <summary>Distance between layers</summary>
       <description>Visual distance in pixels used to separate older windows from the focused window.</description>
     </key>
+    <key name="perspective-strength" type="i">
+      <default>100</default>
+      <range min="0" max="140"/>
+      <summary>Perspective strength</summary>
+      <description>How strongly deeper layers shrink and tilt to create perspective. Lower values keep windows closer to their original shape.</description>
+    </key>
     <key name="magnetic-push" type="i">
       <default>80</default>
       <range min="0" max="220"/>

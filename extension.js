@@ -410,6 +410,7 @@ export default class Dkst3DWinsExtension extends Extension {
     _applyDepthLayout() {
         const maxLayers = this._settings.get_int('max-layers');
         const layerDistance = this._settings.get_int('layer-distance');
+        const perspectiveStrength = this._settings.get_int('perspective-strength');
         const transparency = this._settings.get_int('transparency');
         const rotationXMax = this._settings.get_int('rotation-x');
         const rotationYMax = this._settings.get_int('rotation-y');
@@ -457,6 +458,7 @@ export default class Dkst3DWinsExtension extends Extension {
             const layer = Math.min(rawIndex, maxLayers - 1);
             const options = {
                 layerDistance,
+                perspectiveStrength,
                 transparency,
                 rotationXMax,
                 rotationYMax,
@@ -532,7 +534,9 @@ export default class Dkst3DWinsExtension extends Extension {
             return;
         }
 
-        const scaleStep = Math.min(MAX_SCALE_PER_LAYER, MIN_SCALE_PER_LAYER + options.layerDistance / 2400);
+        const perspectiveRatio = options.perspectiveStrength / 100;
+        const scaleStep = Math.min(MAX_SCALE_PER_LAYER, MIN_SCALE_PER_LAYER + options.layerDistance / 2400) *
+            perspectiveRatio;
         const scale = Math.max(0.58, 1 - layer * scaleStep);
         const sideOffset = layer * Math.max(10, Math.round(options.layerDistance * 0.22));
         const verticalOffset = layer * Math.max(18, Math.round(options.layerDistance * 0.42));
@@ -558,10 +562,12 @@ export default class Dkst3DWinsExtension extends Extension {
     }
 
     _getSphericalLayerRotation(window, activeRect, translationX, translationY, depthRatio, options) {
+        const perspectiveRatio = options.perspectiveStrength / 100;
+
         if (!window || !activeRect) {
             return {
-                x: -options.rotationXMax * depthRatio,
-                y: options.rotationYMax * depthRatio,
+                x: -options.rotationXMax * depthRatio * perspectiveRatio,
+                y: options.rotationYMax * depthRatio * perspectiveRatio,
             };
         }
 
@@ -578,8 +584,8 @@ export default class Dkst3DWinsExtension extends Extension {
         const strength = 0.35 + depthRatio * 0.85;
 
         return {
-            x: offsetY * options.rotationXMax * strength,
-            y: -offsetX * options.rotationYMax * strength,
+            x: offsetY * options.rotationXMax * strength * perspectiveRatio,
+            y: -offsetX * options.rotationYMax * strength * perspectiveRatio,
         };
     }
 
@@ -608,10 +614,12 @@ export default class Dkst3DWinsExtension extends Extension {
         const maxWidth = monitor.width * 0.46;
         const maxHeight = monitor.height * 0.56;
         const baseScale = Math.min(0.92, maxWidth / Math.max(1, rect.width), maxHeight / Math.max(1, rect.height));
-        const scale = Math.max(0.34, baseScale * Math.pow(0.86, absOffset));
+        const cylinderScaleDrop = 1 - (1 - Math.pow(0.86, absOffset)) * options.perspectiveStrength / 100;
+        const scale = Math.max(0.34, baseScale * cylinderScaleDrop);
         const targetCenterX = centerX + displayOffset * monitor.width * CYLINDER_SWITCHER_SIDE_STEP_RATIO;
         const targetCenterY = centerY + absOffset * monitor.height * 0.035;
-        const yawMax = Math.min(34, Math.max(18, options.rotationYMax * 2.1));
+        const yawMax = Math.min(34, Math.max(18, options.rotationYMax * 2.1)) *
+            options.perspectiveStrength / 100;
         const depthRatio = absOffset / Math.max(1, CYLINDER_SWITCHER_VISIBLE_SIDE_WINDOWS);
         const opacity = Math.round(255 * (1 - options.transparency / 100 * depthRatio));
 
