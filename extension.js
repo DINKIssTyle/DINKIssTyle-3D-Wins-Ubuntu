@@ -19,9 +19,10 @@ const MAGNETIC_OVERLAP_RATIO = 0.10;
 const PUSH_APART_PADDING = 18;
 const PUSH_APART_ITERATIONS = 14;
 const PUSH_APART_FIT_ITERATIONS = 8;
+const PUSH_APART_FINAL_ITERATIONS = 18;
 const PUSH_APART_ACTIVE_WEIGHT = 1.2;
 const PUSH_APART_MIN_STAGGER = 52;
-const PUSH_APART_MIN_SCALE = 0.30;
+const PUSH_APART_MIN_SCALE = 0.18;
 const CYLINDER_SWITCHER_VISIBLE_SIDE_WINDOWS = 2;
 const CYLINDER_SWITCHER_SIDE_STEP_RATIO = 0.2;
 const CYLINDER_SWITCHER_DEPTH_RATIO = 0.35;
@@ -621,7 +622,7 @@ export default class Dkst3DWinsExtension extends Extension {
             options.magneticPush * 3.2,
             options.layerDistance * 2.8,
             largestItem * 0.55,
-            Math.min(monitor.width, monitor.height) * 0.28,
+            Math.max(monitor.width, monitor.height),
             PUSH_APART_MIN_STAGGER * Math.min(spreadable.length, 5));
 
         this._seedPushApartOffsets(spreadable, maxOffset);
@@ -685,6 +686,7 @@ export default class Dkst3DWinsExtension extends Extension {
         }
 
         this._fitPushApartItems(items, maxOffset, monitor, maxLayers, options);
+        this._resolveRemainingPushApartOverlaps(items, maxOffset, monitor, maxLayers, options);
     }
 
     _seedPushApartOffsets(items, maxOffset) {
@@ -781,6 +783,109 @@ export default class Dkst3DWinsExtension extends Extension {
         }
     }
 
+    _resolveRemainingPushApartOverlaps(items, maxOffset, monitor, maxLayers, options) {
+        for (let iteration = 0; iteration < PUSH_APART_FINAL_ITERATIONS; iteration++) {
+            let changed = false;
+            const rects = new Map(items.map(item => [item, this._getPushApartRect(item, maxLayers, options)]));
+
+            for (let i = 0; i < items.length; i++) {
+                for (let j = i + 1; j < items.length; j++) {
+                    const first = items[i];
+                    const second = items[j];
+                    const overlap = this._getPushApartOverlap(rects.get(first), rects.get(second));
+
+                    if (!overlap)
+                        continue;
+
+                    const separateOnX = this._shouldSeparatePushApartOnX(overlap, first, second, rects);
+                    const firstWeight = first.isFocused ? 0 : (second.isFocused ? 1 : 0.5);
+                    const secondWeight = second.isFocused ? 0 : (first.isFocused ? 1 : 0.5);
+
+                    if (firstWeight > 0 || secondWeight > 0) {
+                        const beforeFirst = { ...first.pushApartOffset };
+                        const beforeSecond = { ...second.pushApartOffset };
+                        const firstRect = rects.get(first);
+                        const secondRect = rects.get(second);
+                        const centerDeltaX = secondRect.x + secondRect.width / 2 -
+                            (firstRect.x + firstRect.width / 2);
+                        const centerDeltaY = secondRect.y + secondRect.height / 2 -
+                            (firstRect.y + firstRect.height / 2);
+                        const direction = this._getPushApartDirection(
+                            first, second, separateOnX, centerDeltaX, centerDeltaY);
+                        const distance = (separateOnX ? overlap.x : overlap.y) + PUSH_APART_PADDING;
+
+                        if (firstWeight > 0)
+                            this._movePushApartItem(first, separateOnX, -direction * distance * firstWeight,
+                                maxOffset, monitor, maxLayers, options);
+
+                        if (secondWeight > 0)
+                            this._movePushApartItem(second, separateOnX, direction * distance * secondWeight,
+                                maxOffset, monitor, maxLayers, options);
+
+                        changed = changed ||
+                            beforeFirst.x !== first.pushApartOffset.x ||
+                            beforeFirst.y !== first.pushApartOffset.y ||
+                            beforeSecond.x !== second.pushApartOffset.x ||
+                            beforeSecond.y !== second.pushApartOffset.y;
+                    }
+
+                    if (this._getPushApartOverlap(
+                        this._getPushApartRect(first, maxLayers, options),
+                        this._getPushApartRect(second, maxLayers, options))) {
+                        const shrinkFirst = !first.isFocused && this._canShrinkPushApartItem(first);
+                        const shrinkSecond = !second.isFocused && this._canShrinkPushApartItem(second);
+
+                        if (shrinkFirst)
+                            changed = this._shrinkPushApartItem(first, 0.88) || changed;
+
+                        if (shrinkSecond)
+                            changed = this._shrinkPushApartItem(second, 0.88) || changed;
+
+                        if (shrinkFirst || shrinkSecond) {
+                            if (!first.isFocused)
+                                this._movePushApartItem(first, true, 0, maxOffset, monitor, maxLayers, options);
+
+                            if (!second.isFocused)
+                                this._movePushApartItem(second, true, 0, maxOffset, monitor, maxLayers, options);
+                        }
+                    }
+                }
+            }
+
+            if (!changed)
+                break;
+        }
+    }
+
+    _getPushApartOverlap(firstRect, secondRect) {
+        const overlapX = Math.min(firstRect.x + firstRect.width, secondRect.x + secondRect.width) -
+            Math.max(firstRect.x, secondRect.x);
+        const overlapY = Math.min(firstRect.y + firstRect.height, secondRect.y + secondRect.height) -
+            Math.max(firstRect.y, secondRect.y);
+
+        if (overlapX <= 0 || overlapY <= 0)
+            return null;
+
+        return { x: overlapX, y: overlapY };
+    }
+
+    _shouldSeparatePushApartOnX(overlap, first, second, rects) {
+        if (overlap.x !== overlap.y)
+            return overlap.x <= overlap.y;
+
+        const firstRect = rects.get(first);
+        const secondRect = rects.get(second);
+        const centerDeltaX = Math.abs(secondRect.x + secondRect.width / 2 -
+            (firstRect.x + firstRect.width / 2));
+        const centerDeltaY = Math.abs(secondRect.y + secondRect.height / 2 -
+            (firstRect.y + firstRect.height / 2));
+
+        if (centerDeltaX !== centerDeltaY)
+            return centerDeltaX >= centerDeltaY;
+
+        return ((first.order + second.order) % 2) === 0;
+    }
+
     _shrinkPushApartItemToMonitor(item, monitor, maxLayers, options) {
         const rect = item.window.get_frame_rect();
         const placement = this._getLayerPlacement(item.layer, maxLayers, options,
@@ -809,6 +914,10 @@ export default class Dkst3DWinsExtension extends Extension {
 
         item.pushApartScale = nextScale;
         return true;
+    }
+
+    _canShrinkPushApartItem(item) {
+        return item.pushApartScale > PUSH_APART_MIN_SCALE + 0.001;
     }
 
     _movePushApartItem(item, horizontal, delta, maxOffset, monitor, maxLayers, options) {
