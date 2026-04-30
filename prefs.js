@@ -52,6 +52,12 @@ export default class Dkst3DWinsPreferences extends ExtensionPreferences {
         });
         this._bindBoolSwitch(settings, 'use-magnetic-push', useMagneticPush);
 
+        const usePushApart = new Adw.SwitchRow({
+            title: 'Use Push Apart spread',
+            subtitle: 'Spread overlapping background windows apart so hidden windows are easier to pick.',
+        });
+        this._bindBoolSwitch(settings, 'use-push-apart', usePushApart);
+
         const adjustOnFocusedMove = new Adw.SwitchRow({
             title: 'Adjust surrounding windows while moving focused window',
             subtitle: 'Updates nearby background windows as the focused window moves.',
@@ -85,6 +91,7 @@ export default class Dkst3DWinsPreferences extends ExtensionPreferences {
         group.add(layerShrink);
         group.add(useMagneticPush);
         group.add(magneticPush);
+        group.add(usePushApart);
         group.add(adjustOnFocusedMove);
         group.add(useCylinderSwitcher);
         group.add(transparency);

@@ -36,6 +36,11 @@
       <summary>Use magnetic push</summary>
       <description>Whether to push overlapping background windows away from the focused window.</description>
     </key>
+    <key name="use-push-apart" type="b">
+      <default>false</default>
+      <summary>Use Push Apart spread</summary>
+      <description>Whether to spread overlapping background windows apart after the magnetic push layout is calculated.</description>
+    </key>
     <key name="adjust-surrounding-windows-on-focused-move" type="b">
       <default>true</default>
       <summary>Adjust surrounding windows while moving focused window</summary>

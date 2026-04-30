@@ -16,6 +16,12 @@ const ANIMATION_TIME = 220;
 const MIN_SCALE_PER_LAYER = 0.045;
 const MAX_SCALE_PER_LAYER = 0.085;
 const MAGNETIC_OVERLAP_RATIO = 0.10;
+const PUSH_APART_PADDING = 18;
+const PUSH_APART_ITERATIONS = 14;
+const PUSH_APART_FIT_ITERATIONS = 8;
+const PUSH_APART_ACTIVE_WEIGHT = 1.2;
+const PUSH_APART_MIN_STAGGER = 52;
+const PUSH_APART_MIN_SCALE = 0.30;
 const CYLINDER_SWITCHER_VISIBLE_SIDE_WINDOWS = 2;
 const CYLINDER_SWITCHER_SIDE_STEP_RATIO = 0.2;
 const CYLINDER_SWITCHER_DEPTH_RATIO = 0.35;
@@ -418,6 +424,7 @@ export default class Dkst3DWinsExtension extends Extension {
         const magneticPush = this._settings.get_boolean('use-magnetic-push')
             ? this._settings.get_int('magnetic-push')
             : 0;
+        const usePushApart = this._settings.get_boolean('use-push-apart');
         const windows = this._getEligibleWindows();
         const live = new Set(windows);
         this._syncWindowSignals(windows);
@@ -443,8 +450,18 @@ export default class Dkst3DWinsExtension extends Extension {
         const activeRect = this._isEligibleWindow(activeWindow)
             ? activeWindow.get_frame_rect()
             : null;
+        const options = {
+            layerDistance,
+            perspectiveStrength,
+            layerShrink,
+            transparency,
+            rotationXMax,
+            rotationYMax,
+            magneticPush,
+        };
         const resetActors = new Set(this._trackedActors);
         const orderedActors = [];
+        const layerItems = [];
 
         for (const window of this._focusHistory) {
             const actor = actorByWindow.get(window);
@@ -457,26 +474,36 @@ export default class Dkst3DWinsExtension extends Extension {
 
             const rawIndex = this._focusHistory.indexOf(window);
             const layer = Math.min(rawIndex, maxLayers - 1);
-            const options = {
-                layerDistance,
-                perspectiveStrength,
-                layerShrink,
-                transparency,
-                rotationXMax,
-                rotationYMax,
-                magneticPush,
-            };
 
             if (this._cylinderSwitcherActive) {
                 this._styleCylinderSwitcherWindow(actor, window, options);
                 continue;
             }
 
-            this._styleLayer(actor, layer, maxLayers, options,
-                window === activeWindow,
-                this._getMagneticPush(window, activeRect, magneticPush),
+            const isFocused = window === activeWindow;
+            layerItems.push({
+                actor,
                 window,
-                activeRect);
+                layer,
+                order: layerItems.length,
+                isFocused,
+                magneticOffset: this._getMagneticPush(window, activeRect, magneticPush),
+                pushApartOffset: { x: 0, y: 0 },
+                pushApartScale: 1,
+            });
+        }
+
+        if (!this._cylinderSwitcherActive && usePushApart && layerItems.length > 1)
+            this._applyPushApartOffsets(layerItems, maxLayers, options);
+
+        for (const item of layerItems) {
+            this._styleLayer(item.actor, item.layer, maxLayers, options,
+                item.isFocused,
+                item.magneticOffset,
+                item.window,
+                activeRect,
+                item.pushApartOffset,
+                item.pushApartScale);
         }
 
         for (const actor of resetActors) {
@@ -516,11 +543,13 @@ export default class Dkst3DWinsExtension extends Extension {
         }
     }
 
-    _styleLayer(actor, layer, maxLayers, options, isFocused, magneticOffset, window, activeRect) {
+    _styleLayer(actor, layer, maxLayers, options, isFocused, magneticOffset, window, activeRect,
+        pushApartOffset = { x: 0, y: 0 }, pushApartScale = 1) {
         actor.remove_all_transitions();
         actor.set_pivot_point(0.5, 0.5);
 
-        if (isFocused) {
+        if (isFocused && pushApartScale === 1 &&
+            pushApartOffset.x === 0 && pushApartOffset.y === 0) {
             actor.ease({
                 scale_x: 1,
                 scale_y: 1,
@@ -536,30 +565,269 @@ export default class Dkst3DWinsExtension extends Extension {
             return;
         }
 
-        const scaleStep = (Math.min(MAX_SCALE_PER_LAYER, MIN_SCALE_PER_LAYER + options.layerDistance / 2400) *
-            options.layerShrink / 100) * 0.5;
-        const scale = Math.max(0.48, 1 - layer * scaleStep);
-        const sideOffset = layer * Math.max(10, Math.round(options.layerDistance * 0.22));
-        const verticalOffset = layer * Math.max(18, Math.round(options.layerDistance * 0.42));
-        const translationX = sideOffset + magneticOffset.x;
-        const translationY = verticalOffset + magneticOffset.y;
+        const placement = this._getLayerPlacement(layer, maxLayers, options,
+            magneticOffset, pushApartOffset, pushApartScale);
+        const translationX = placement.translationX;
+        const translationY = placement.translationY;
         const depthRatio = layer / Math.max(1, maxLayers - 1);
-        const sphericalRotation = this._getSphericalLayerRotation(
-            window, activeRect, translationX, translationY, depthRatio, options);
-        const opacity = Math.round(255 * (1 - options.transparency / 100 * depthRatio));
+        const sphericalRotation = isFocused
+            ? { x: 0, y: 0 }
+            : this._getSphericalLayerRotation(
+                window, activeRect, translationX, translationY, depthRatio, options);
+        const opacity = isFocused
+            ? 255
+            : Math.round(255 * (1 - options.transparency / 100 * depthRatio));
 
         actor.ease({
-            scale_x: scale,
-            scale_y: scale,
+            scale_x: placement.scale,
+            scale_y: placement.scale,
             translation_x: translationX,
             translation_y: translationY,
-            translation_z: -layer * (options.layerDistance * 1.5),
+            translation_z: isFocused ? 0 : -layer * (options.layerDistance * 1.5),
             rotation_angle_x: sphericalRotation.x,
             rotation_angle_y: sphericalRotation.y,
             opacity,
             duration: ANIMATION_TIME,
             mode: Clutter.AnimationMode.EASE_OUT_QUAD,
         });
+    }
+
+    _getLayerPlacement(layer, maxLayers, options, magneticOffset = { x: 0, y: 0 },
+        pushApartOffset = { x: 0, y: 0 }, pushApartScale = 1) {
+        const scaleStep = (Math.min(MAX_SCALE_PER_LAYER, MIN_SCALE_PER_LAYER + options.layerDistance / 2400) *
+            options.layerShrink / 100) * 0.5;
+        const scale = Math.max(0.48, 1 - layer * scaleStep) * pushApartScale;
+        const sideOffset = layer * Math.max(10, Math.round(options.layerDistance * 0.22));
+        const verticalOffset = layer * Math.max(18, Math.round(options.layerDistance * 0.42));
+
+        return {
+            scale,
+            translationX: sideOffset + magneticOffset.x + pushApartOffset.x,
+            translationY: verticalOffset + magneticOffset.y + pushApartOffset.y,
+        };
+    }
+
+    _applyPushApartOffsets(items, maxLayers, options) {
+        const spreadable = items.filter(item => !item.isFocused);
+        if (spreadable.length === 0)
+            return;
+
+        const monitor = this._getCurrentMonitorGeometry();
+        const largestItem = items.reduce((largest, item) => {
+            const rect = item.window.get_frame_rect();
+            return Math.max(largest, rect.width, rect.height);
+        }, 0);
+        const maxOffset = Math.max(
+            options.magneticPush * 3.2,
+            options.layerDistance * 2.8,
+            largestItem * 0.55,
+            Math.min(monitor.width, monitor.height) * 0.28,
+            PUSH_APART_MIN_STAGGER * Math.min(spreadable.length, 5));
+
+        this._seedPushApartOffsets(spreadable, maxOffset);
+        for (const item of spreadable)
+            this._movePushApartItem(item, true, 0, maxOffset, monitor, maxLayers, options);
+
+        for (let iteration = 0; iteration < PUSH_APART_ITERATIONS; iteration++) {
+            let moved = false;
+            const rects = new Map(items.map(item => [item, this._getPushApartRect(item, maxLayers, options)]));
+
+            for (let i = 0; i < items.length; i++) {
+                for (let j = i + 1; j < items.length; j++) {
+                    const first = items[i];
+                    const second = items[j];
+
+                    if (first.isFocused && second.isFocused)
+                        continue;
+
+                    const firstRect = rects.get(first);
+                    const secondRect = rects.get(second);
+                    const overlapX = Math.min(firstRect.x + firstRect.width, secondRect.x + secondRect.width) -
+                        Math.max(firstRect.x, secondRect.x);
+                    const overlapY = Math.min(firstRect.y + firstRect.height, secondRect.y + secondRect.height) -
+                        Math.max(firstRect.y, secondRect.y);
+
+                    if (overlapX <= 0 || overlapY <= 0)
+                        continue;
+
+                    const firstCenterX = firstRect.x + firstRect.width / 2;
+                    const firstCenterY = firstRect.y + firstRect.height / 2;
+                    const secondCenterX = secondRect.x + secondRect.width / 2;
+                    const secondCenterY = secondRect.y + secondRect.height / 2;
+                    const centerDeltaX = secondCenterX - firstCenterX;
+                    const centerDeltaY = secondCenterY - firstCenterY;
+                    const fallbackHorizontal = ((first.order + second.order) % 2) === 0;
+                    const separateOnX = centerDeltaX === 0 && centerDeltaY === 0
+                        ? fallbackHorizontal
+                        : overlapX <= overlapY;
+                    const direction = this._getPushApartDirection(
+                        first, second, separateOnX, centerDeltaX, centerDeltaY);
+                    const distance = (separateOnX ? overlapX : overlapY) + PUSH_APART_PADDING;
+                    const firstWeight = first.isFocused ? 0 : (second.isFocused ? PUSH_APART_ACTIVE_WEIGHT : 0.5);
+                    const secondWeight = second.isFocused ? 0 : (first.isFocused ? PUSH_APART_ACTIVE_WEIGHT : 0.5);
+
+                    if (firstWeight > 0) {
+                        this._movePushApartItem(first, separateOnX, -direction * distance * firstWeight,
+                            maxOffset, monitor, maxLayers, options);
+                        moved = true;
+                    }
+
+                    if (secondWeight > 0) {
+                        this._movePushApartItem(second, separateOnX, direction * distance * secondWeight,
+                            maxOffset, monitor, maxLayers, options);
+                        moved = true;
+                    }
+                }
+            }
+
+            if (!moved)
+                break;
+        }
+
+        this._fitPushApartItems(items, maxOffset, monitor, maxLayers, options);
+    }
+
+    _seedPushApartOffsets(items, maxOffset) {
+        const center = (items.length - 1) / 2;
+        const columns = Math.max(1, Math.ceil(Math.sqrt(items.length)));
+
+        for (let index = 0; index < items.length; index++) {
+            const item = items[index];
+            const column = index % columns;
+            const row = Math.floor(index / columns);
+            const centeredColumn = column - (Math.min(columns, items.length) - 1) / 2;
+            const centeredRow = row - Math.floor((items.length - 1) / columns) / 2;
+            const diagonal = index - center;
+
+            item.pushApartOffset.x = this._clamp(
+                centeredColumn * PUSH_APART_MIN_STAGGER + diagonal * PUSH_APART_MIN_STAGGER * 0.35,
+                -maxOffset,
+                maxOffset);
+            item.pushApartOffset.y = this._clamp(
+                centeredRow * PUSH_APART_MIN_STAGGER + Math.abs(diagonal) * PUSH_APART_MIN_STAGGER * 0.22,
+                -maxOffset,
+                maxOffset);
+        }
+    }
+
+    _getPushApartDirection(first, second, horizontal, centerDeltaX, centerDeltaY) {
+        const delta = horizontal ? centerDeltaX : centerDeltaY;
+        if (delta !== 0)
+            return delta > 0 ? 1 : -1;
+
+        return second.order >= first.order ? 1 : -1;
+    }
+
+    _getPushApartRect(item, maxLayers, options) {
+        const rect = item.window.get_frame_rect();
+        const placement = this._getLayerPlacement(item.layer, maxLayers, options,
+            item.magneticOffset, item.pushApartOffset, item.pushApartScale);
+        const width = rect.width * placement.scale;
+        const height = rect.height * placement.scale;
+        const centerX = rect.x + rect.width / 2 + placement.translationX;
+        const centerY = rect.y + rect.height / 2 + placement.translationY;
+
+        return {
+            x: centerX - width / 2,
+            y: centerY - height / 2,
+            width,
+            height,
+        };
+    }
+
+    _fitPushApartItems(items, maxOffset, monitor, maxLayers, options) {
+        for (let iteration = 0; iteration < PUSH_APART_FIT_ITERATIONS; iteration++) {
+            let changed = false;
+
+            for (const item of items) {
+                if (!item.isFocused)
+                    this._movePushApartItem(item, true, 0, maxOffset, monitor, maxLayers, options);
+
+                if (!item.isFocused)
+                    changed = this._shrinkPushApartItemToMonitor(item, monitor, maxLayers, options) || changed;
+            }
+
+            const rects = new Map(items.map(item => [item, this._getPushApartRect(item, maxLayers, options)]));
+
+            for (let i = 0; i < items.length; i++) {
+                for (let j = i + 1; j < items.length; j++) {
+                    const first = items[i];
+                    const second = items[j];
+                    const firstRect = rects.get(first);
+                    const secondRect = rects.get(second);
+                    const overlapX = Math.min(firstRect.x + firstRect.width, secondRect.x + secondRect.width) -
+                        Math.max(firstRect.x, secondRect.x);
+                    const overlapY = Math.min(firstRect.y + firstRect.height, secondRect.y + secondRect.height) -
+                        Math.max(firstRect.y, secondRect.y);
+
+                    if (overlapX <= 0 || overlapY <= 0)
+                        continue;
+
+                    const pressure = Math.max(
+                        overlapX / Math.max(1, Math.min(firstRect.width, secondRect.width)),
+                        overlapY / Math.max(1, Math.min(firstRect.height, secondRect.height)));
+                    const factor = 1 - this._clamp(pressure * 0.55, 0.04, 0.18);
+
+                    if (!first.isFocused)
+                        changed = this._shrinkPushApartItem(first, factor) || changed;
+
+                    if (!second.isFocused)
+                        changed = this._shrinkPushApartItem(second, factor) || changed;
+                }
+            }
+
+            if (!changed)
+                break;
+        }
+    }
+
+    _shrinkPushApartItemToMonitor(item, monitor, maxLayers, options) {
+        const rect = item.window.get_frame_rect();
+        const placement = this._getLayerPlacement(item.layer, maxLayers, options,
+            item.magneticOffset, item.pushApartOffset, item.pushApartScale);
+        const centerX = rect.x + rect.width / 2 + placement.translationX;
+        const centerY = rect.y + rect.height / 2 + placement.translationY;
+        const left = monitor.x + PUSH_APART_PADDING;
+        const right = monitor.x + monitor.width - PUSH_APART_PADDING;
+        const top = monitor.y + PUSH_APART_PADDING;
+        const bottom = monitor.y + monitor.height - PUSH_APART_PADDING;
+        const availableWidth = Math.max(1, 2 * Math.min(centerX - left, right - centerX));
+        const availableHeight = Math.max(1, 2 * Math.min(centerY - top, bottom - centerY));
+        const currentWidth = rect.width * placement.scale;
+        const currentHeight = rect.height * placement.scale;
+        const factor = Math.min(1, availableWidth / Math.max(1, currentWidth),
+            availableHeight / Math.max(1, currentHeight));
+
+        return factor < 1 && this._shrinkPushApartItem(item, factor);
+    }
+
+    _shrinkPushApartItem(item, factor) {
+        const nextScale = this._clamp(item.pushApartScale * factor, PUSH_APART_MIN_SCALE, 1);
+
+        if (Math.abs(nextScale - item.pushApartScale) < 0.001)
+            return false;
+
+        item.pushApartScale = nextScale;
+        return true;
+    }
+
+    _movePushApartItem(item, horizontal, delta, maxOffset, monitor, maxLayers, options) {
+        if (horizontal)
+            item.pushApartOffset.x = this._clamp(item.pushApartOffset.x + delta, -maxOffset, maxOffset);
+        else
+            item.pushApartOffset.y = this._clamp(item.pushApartOffset.y + delta, -maxOffset, maxOffset);
+
+        const rect = this._getPushApartRect(item, maxLayers, options);
+
+        if (rect.x < monitor.x + PUSH_APART_PADDING)
+            item.pushApartOffset.x += monitor.x + PUSH_APART_PADDING - rect.x;
+        else if (rect.x + rect.width > monitor.x + monitor.width - PUSH_APART_PADDING)
+            item.pushApartOffset.x -= rect.x + rect.width - (monitor.x + monitor.width - PUSH_APART_PADDING);
+
+        if (rect.y < monitor.y + PUSH_APART_PADDING)
+            item.pushApartOffset.y += monitor.y + PUSH_APART_PADDING - rect.y;
+        else if (rect.y + rect.height > monitor.y + monitor.height - PUSH_APART_PADDING)
+            item.pushApartOffset.y -= rect.y + rect.height - (monitor.y + monitor.height - PUSH_APART_PADDING);
     }
 
     _getSphericalLayerRotation(window, activeRect, translationX, translationY, depthRatio, options) {
