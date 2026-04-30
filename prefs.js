@@ -21,6 +21,18 @@ export default class Dkst3DWinsPreferences extends ExtensionPreferences {
             description: 'Focused windows stay full size. Older focused windows move backward into lower layers.',
         });
 
+        const useWindowEffect = new Adw.SwitchRow({
+            title: 'Use window effect',
+            subtitle: 'Enable the layered 3D depth effect for regular windows.',
+        });
+        this._bindBoolSwitch(settings, 'use-window-effect', useWindowEffect);
+
+        const showSystemTray = new Adw.SwitchRow({
+            title: 'Show system tray icon',
+            subtitle: 'Show the panel icon with quick toggles and settings access.',
+        });
+        this._bindBoolSwitch(settings, 'show-system-tray', showSystemTray);
+
         const maxLayers = Adw.SpinRow.new_with_range(2, 12, 1);
         maxLayers.title = 'Maximum layers';
         maxLayers.subtitle = 'Default is 5. The last layer holds every older window together.';
@@ -85,6 +97,8 @@ export default class Dkst3DWinsPreferences extends ExtensionPreferences {
         rotationY.subtitle = 'Maximum spherical side rotation around the focused window. Default is 9.';
         this._bindIntSpin(settings, 'rotation-y', rotationY);
 
+        group.add(useWindowEffect);
+        group.add(showSystemTray);
         group.add(maxLayers);
         group.add(layerDistance);
         group.add(perspectiveStrength);

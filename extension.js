@@ -4,13 +4,17 @@
  */
 
 import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 const ANIMATION_TIME = 220;
 const MIN_SCALE_PER_LAYER = 0.045;
@@ -47,6 +51,95 @@ const ABOVE_LAYER_WINDOW_TYPES = new Set([
     Meta.WindowType.MODAL_DIALOG,
     Meta.WindowType.UTILITY,
 ]);
+const PANEL_ICON_SIZE = 32;
+const PANEL_BUTTON_HPADDING = 1;
+
+const Dkst3DWinsIndicator = GObject.registerClass(
+class Dkst3DWinsIndicator extends PanelMenu.Button {
+    _init(extension) {
+        super._init(0.0, 'DINKIssTyle 3D Wins');
+
+        this._extension = extension;
+        this._settings = extension._settings;
+        this._signals = [];
+        this.set_style(
+            `-natural-hpadding: ${PANEL_BUTTON_HPADDING}px; ` +
+            `-minimum-hpadding: ${PANEL_BUTTON_HPADDING}px; ` +
+            `padding-left: ${PANEL_BUTTON_HPADDING}px; ` +
+            `padding-right: ${PANEL_BUTTON_HPADDING}px;`);
+
+        const icon = new St.Icon({
+            gicon: Gio.icon_new_for_string(GLib.build_filenamev([extension.path, 'icon.png'])),
+            icon_size: PANEL_ICON_SIZE,
+            style_class: 'system-status-icon',
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        icon.set_size(PANEL_ICON_SIZE, PANEL_ICON_SIZE);
+        this.add_child(icon);
+
+        this._windowEffectItem = new PopupMenu.PopupSwitchMenuItem(
+            'Window Effect Toggle',
+            this._settings.get_boolean('use-window-effect'));
+        this._altTabEffectItem = new PopupMenu.PopupSwitchMenuItem(
+            'Alt-Tab Effect Toggle',
+            this._settings.get_boolean('use-cylinder-switcher'));
+        const openSettingsItem = new PopupMenu.PopupMenuItem('Open Settings');
+
+        this.menu.addMenuItem(this._windowEffectItem);
+        this.menu.addMenuItem(this._altTabEffectItem);
+        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+        this.menu.addMenuItem(openSettingsItem);
+
+        this._signals.push([
+            this._windowEffectItem,
+            this._windowEffectItem.connect('toggled', (_item, state) => {
+                if (this._settings.get_boolean('use-window-effect') !== state)
+                    this._settings.set_boolean('use-window-effect', state);
+            }),
+        ]);
+        this._signals.push([
+            this._altTabEffectItem,
+            this._altTabEffectItem.connect('toggled', (_item, state) => {
+                if (this._settings.get_boolean('use-cylinder-switcher') !== state)
+                    this._settings.set_boolean('use-cylinder-switcher', state);
+            }),
+        ]);
+        this._signals.push([
+            openSettingsItem,
+            openSettingsItem.connect('activate', () => {
+                this.menu.close();
+                this._extension.openPreferences();
+            }),
+        ]);
+        this._signals.push([
+            this._settings,
+            this._settings.connect('changed::use-window-effect', () =>
+                this._syncSwitch(this._windowEffectItem, 'use-window-effect')),
+        ]);
+        this._signals.push([
+            this._settings,
+            this._settings.connect('changed::use-cylinder-switcher', () =>
+                this._syncSwitch(this._altTabEffectItem, 'use-cylinder-switcher')),
+        ]);
+    }
+
+    destroy() {
+        for (const [object, id] of this._signals)
+            object.disconnect(id);
+        this._signals = [];
+        this._extension = null;
+        this._settings = null;
+
+        super.destroy();
+    }
+
+    _syncSwitch(item, key) {
+        const value = this._settings.get_boolean(key);
+        if (item.state !== value)
+            item.setToggleState(value);
+    }
+});
 
 export default class Dkst3DWinsExtension extends Extension {
     enable() {
@@ -64,6 +157,7 @@ export default class Dkst3DWinsExtension extends Extension {
         this._cylinderSwitcherWindows = [];
         this._cylinderSwitcherSelectedIndex = 0;
         this._cylinderSwitcherModifierMask = 0;
+        this._indicator = null;
 
         this._connect(global.display, 'notify::focus-window', () => {
             this._rememberFocusedWindow();
@@ -78,7 +172,9 @@ export default class Dkst3DWinsExtension extends Extension {
             this._queueApply();
         });
         this._connect(this._settings, 'changed', () => this._queueApply());
+        this._connect(this._settings, 'changed::show-system-tray', () => this._syncIndicator());
         this._patchWindowSwitcherKeybindings();
+        this._syncIndicator();
 
         this._rebuildHistory();
         this._queueApply();
@@ -110,6 +206,7 @@ export default class Dkst3DWinsExtension extends Extension {
 
         this._unpatchWindowSwitcherKeybindings();
         this._destroyCylinderSwitcherActor();
+        this._destroyIndicator();
 
         this._trackedActors.clear();
         this._focusHistory = [];
@@ -120,6 +217,26 @@ export default class Dkst3DWinsExtension extends Extension {
 
     _connect(object, signal, callback) {
         this._signals.push([object, object.connect(signal, callback)]);
+    }
+
+    _syncIndicator() {
+        if (this._settings.get_boolean('show-system-tray')) {
+            if (!this._indicator) {
+                this._indicator = new Dkst3DWinsIndicator(this);
+                Main.panel.addToStatusArea(this.uuid, this._indicator);
+            }
+            return;
+        }
+
+        this._destroyIndicator();
+    }
+
+    _destroyIndicator() {
+        if (!this._indicator)
+            return;
+
+        this._indicator.destroy();
+        this._indicator = null;
     }
 
     _queueApply() {
@@ -415,6 +532,7 @@ export default class Dkst3DWinsExtension extends Extension {
     }
 
     _applyDepthLayout() {
+        const useWindowEffect = this._settings.get_boolean('use-window-effect');
         const maxLayers = this._settings.get_int('max-layers');
         const layerDistance = this._settings.get_int('layer-distance');
         const perspectiveStrength = this._settings.get_int('perspective-strength');
@@ -434,6 +552,13 @@ export default class Dkst3DWinsExtension extends Extension {
         for (const window of windows)
             this._rememberWindow(window);
         this._rememberFocusedWindow();
+
+        if (!useWindowEffect && !this._cylinderSwitcherActive) {
+            for (const actor of this._trackedActors)
+                this._resetActor(actor, false);
+            this._trackedActors.clear();
+            return;
+        }
 
         const actorByWindow = new Map();
         const aboveLayerActors = [];

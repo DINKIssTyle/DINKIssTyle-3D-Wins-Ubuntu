@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
   <schema id="org.gnome.shell.extensions.dkst-3d-wins" path="/org/gnome/shell/extensions/dkst-3d-wins/">
+    <key name="use-window-effect" type="b">
+      <default>true</default>
+      <summary>Use window effect</summary>
+      <description>Whether regular windows use the layered 3D depth effect.</description>
+    </key>
+    <key name="show-system-tray" type="b">
+      <default>true</default>
+      <summary>Show system tray icon</summary>
+      <description>Whether to show the panel icon with quick toggles and settings access.</description>
+    </key>
     <key name="max-layers" type="i">
       <default>5</default>
       <range min="2" max="12"/>

@@ -13,13 +13,13 @@ schemas:
 
 install: schemas
 	mkdir -p "$(INSTALL_DIR)"
-	cp -r extension.js prefs.js metadata.json schemas "$(INSTALL_DIR)/"
+	cp -r extension.js prefs.js metadata.json icon.png schemas "$(INSTALL_DIR)/"
 
 uninstall:
 	rm -rf "$(INSTALL_DIR)"
 
 pack: schemas
-	gnome-extensions pack --force --extra-source=schemas .
+	gnome-extensions pack --force --extra-source=schemas --extra-source=icon.png .
 
 clean:
 	rm -f schemas/gschemas.compiled *.shell-extension.zip
