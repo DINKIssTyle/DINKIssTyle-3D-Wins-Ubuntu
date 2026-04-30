@@ -1,5 +1,24 @@
 # 🌟 DINKIssTyle 3D Wins
 
+
+<div align="center">
+  <img src="./res/Push-apart-2D.gif" alt="" width="600">
+</div>
+
+<div align="center">
+  <img src="./res/Push-apart-3D.gif" alt="" width="600">
+</div>
+
+<div align="center">
+  <img src="./res/3D.gif" alt="" width="600">
+</div>
+
+<div align="center">
+  <img src="./res/Alttab.gif" alt="" width="600">
+</div>
+
+<div><br><br></div>
+
 [🇰🇷 한국어 버전으로 이동 (Jump to Korean Version)](#-dinkisstyle-3d-wins-korean)
 
 [![GNOME Shell](https://img.shields.io/badge/GNOME-Shell-blue?logo=gnome)](https://extensions.gnome.org/)
